@@ -10,6 +10,7 @@ namespace SerialCommTest
         const char STX = '\x02';
         const char ETX = '\x03';
         private StringBuilder rxBuffer = new StringBuilder();
+        private string lastSentCommand = "None";
 
         public Form1()
         {
@@ -18,6 +19,9 @@ namespace SerialCommTest
 
         private void Form1_Load(object sender, EventArgs e)
         {
+            LogManager.Initialize();
+            Log("프로그램 시작 - 로그 파일 생성");
+
             string[] ports = SerialPort.GetPortNames();
 
             comboCOM.Items.AddRange(ports);
@@ -64,6 +68,7 @@ namespace SerialCommTest
 
         private void Log(string msg)
         {
+            if (richLog.IsDisposed) return;
             string currentTime = DateTime.Now.ToString("HH:mm:ss");
             richLog.AppendText($"[{currentTime}] {msg}\r\n");
             richLog.ScrollToCaret();
@@ -77,10 +82,12 @@ namespace SerialCommTest
             try
             {
                 string data = txtSend.Text;
+                lastSentCommand = data;
                 string packet = $"{STX}{data}{ETX}";
                 serialPort1.Write(packet);
                 //serialPort1.WriteLine(data);
                 Log($"[TX] 보냄 : {data} (STX/ETX)");
+                LogManager.WriteBytes("TX", data);
                 txtSend.Clear();
             }
             catch (Exception ex)
@@ -94,8 +101,11 @@ namespace SerialCommTest
         {
             try
             {
+                if (!serialPort1.IsOpen) return;
                 string recvData = serialPort1.ReadExisting();
                 rxBuffer.Append(recvData);
+
+                LogManager.WriteBytes("RX_RAW", recvData.Replace("\n", "\\n").Replace("\r", "\\r"));
 
                 while (true)
                 {
@@ -110,6 +120,7 @@ namespace SerialCommTest
                         this.Invoke(new Action(() =>
                         {
                             Log($"[RX] 파싱 : {msg}");
+                            LogManager.WriteResult(lastSentCommand, msg, "성공");
                         }));
 
                         rxBuffer.Remove(0, etxIndex + 1);
