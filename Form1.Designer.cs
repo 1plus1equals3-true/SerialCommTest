@@ -36,6 +36,12 @@
             this.serialPort1 = new System.IO.Ports.SerialPort(this.components);
             this.txtSend = new System.Windows.Forms.TextBox();
             this.btnSend = new System.Windows.Forms.Button();
+            this.dgvList = new System.Windows.Forms.DataGridView();
+            this.btnLoad = new System.Windows.Forms.Button();
+            this.btnAutoStart = new System.Windows.Forms.Button();
+            this.chkRaw = new System.Windows.Forms.CheckBox();
+            this.chkDeviceMode = new System.Windows.Forms.CheckBox();
+            ((System.ComponentModel.ISupportInitialize)(this.dgvList)).BeginInit();
             this.SuspendLayout();
             // 
             // btnConnect
@@ -60,7 +66,7 @@
             // 
             this.richLog.Location = new System.Drawing.Point(220, 14);
             this.richLog.Name = "richLog";
-            this.richLog.Size = new System.Drawing.Size(541, 381);
+            this.richLog.Size = new System.Drawing.Size(436, 535);
             this.richLog.TabIndex = 2;
             this.richLog.Text = "";
             // 
@@ -81,11 +87,65 @@
             this.btnSend.UseVisualStyleBackColor = true;
             this.btnSend.Click += new System.EventHandler(this.btnSend_Click);
             // 
+            // dgvList
+            // 
+            this.dgvList.ColumnHeadersHeightSizeMode = System.Windows.Forms.DataGridViewColumnHeadersHeightSizeMode.AutoSize;
+            this.dgvList.Location = new System.Drawing.Point(662, 14);
+            this.dgvList.Name = "dgvList";
+            this.dgvList.RowTemplate.Height = 23;
+            this.dgvList.Size = new System.Drawing.Size(310, 535);
+            this.dgvList.TabIndex = 5;
+            // 
+            // btnLoad
+            // 
+            this.btnLoad.Location = new System.Drawing.Point(12, 284);
+            this.btnLoad.Name = "btnLoad";
+            this.btnLoad.Size = new System.Drawing.Size(202, 23);
+            this.btnLoad.TabIndex = 6;
+            this.btnLoad.Text = "엑셀 불러오기";
+            this.btnLoad.UseVisualStyleBackColor = true;
+            this.btnLoad.Click += new System.EventHandler(this.btnLoad_Click);
+            // 
+            // btnAutoStart
+            // 
+            this.btnAutoStart.Location = new System.Drawing.Point(12, 313);
+            this.btnAutoStart.Name = "btnAutoStart";
+            this.btnAutoStart.Size = new System.Drawing.Size(202, 23);
+            this.btnAutoStart.TabIndex = 7;
+            this.btnAutoStart.Text = "엑셀 시작";
+            this.btnAutoStart.UseVisualStyleBackColor = true;
+            this.btnAutoStart.Click += new System.EventHandler(this.btnAutoStart_Click);
+            // 
+            // chkRaw
+            // 
+            this.chkRaw.AutoSize = true;
+            this.chkRaw.Location = new System.Drawing.Point(97, 41);
+            this.chkRaw.Name = "chkRaw";
+            this.chkRaw.Size = new System.Drawing.Size(117, 16);
+            this.chkRaw.TabIndex = 8;
+            this.chkRaw.Text = "Raw 데이터 보기";
+            this.chkRaw.UseVisualStyleBackColor = true;
+            // 
+            // chkDeviceMode
+            // 
+            this.chkDeviceMode.AutoSize = true;
+            this.chkDeviceMode.Location = new System.Drawing.Point(97, 63);
+            this.chkDeviceMode.Name = "chkDeviceMode";
+            this.chkDeviceMode.Size = new System.Drawing.Size(112, 16);
+            this.chkDeviceMode.TabIndex = 9;
+            this.chkDeviceMode.Text = "시뮬레이터 모드";
+            this.chkDeviceMode.UseVisualStyleBackColor = true;
+            // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 12F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(800, 450);
+            this.ClientSize = new System.Drawing.Size(984, 561);
+            this.Controls.Add(this.chkDeviceMode);
+            this.Controls.Add(this.chkRaw);
+            this.Controls.Add(this.btnAutoStart);
+            this.Controls.Add(this.btnLoad);
+            this.Controls.Add(this.dgvList);
             this.Controls.Add(this.btnSend);
             this.Controls.Add(this.txtSend);
             this.Controls.Add(this.richLog);
@@ -93,8 +153,9 @@
             this.Controls.Add(this.btnConnect);
             this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.Name = "Form1";
-            this.Text = "Form1";
+            this.Text = "SerialCommTest";
             this.Load += new System.EventHandler(this.Form1_Load);
+            ((System.ComponentModel.ISupportInitialize)(this.dgvList)).EndInit();
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -108,6 +169,11 @@
         private System.IO.Ports.SerialPort serialPort1;
         private System.Windows.Forms.TextBox txtSend;
         private System.Windows.Forms.Button btnSend;
+        private System.Windows.Forms.DataGridView dgvList;
+        private System.Windows.Forms.Button btnLoad;
+        private System.Windows.Forms.Button btnAutoStart;
+        private System.Windows.Forms.CheckBox chkRaw;
+        private System.Windows.Forms.CheckBox chkDeviceMode;
     }
 }
 

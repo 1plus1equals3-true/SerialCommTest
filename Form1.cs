@@ -1,6 +1,9 @@
 ﻿using System;
+using System.Drawing;
+using System.IO;
 using System.IO.Ports;
 using System.Text;
+using System.Threading.Tasks;
 using System.Windows.Forms;
 
 namespace SerialCommTest
@@ -10,7 +13,10 @@ namespace SerialCommTest
         const char STX = '\x02';
         const char ETX = '\x03';
         private StringBuilder rxBuffer = new StringBuilder();
-        private string lastSentCommand = "None";
+
+        private bool isAutoRunning = false;
+        private bool isResponseReceived = false;
+        private string lastSentCommand = "";
 
         public Form1()
         {
@@ -32,6 +38,13 @@ namespace SerialCommTest
             }
 
             serialPort1.DataReceived += new SerialDataReceivedEventHandler(serialPort1_DataReceived);
+
+            dgvList.ColumnCount = 4;
+            dgvList.Columns[0].Name = "순번";
+            dgvList.Columns[1].Name = "명령어";
+            dgvList.Columns[2].Name = "응답값";
+            dgvList.Columns[3].Name = "결과";
+            dgvList.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
         }
 
         private void btnConnect_Click(object sender, EventArgs e)
@@ -104,8 +117,12 @@ namespace SerialCommTest
                 if (!serialPort1.IsOpen) return;
                 string recvData = serialPort1.ReadExisting();
                 rxBuffer.Append(recvData);
+                LogManager.WriteBytes("RX_RAW", recvData);
 
-                LogManager.WriteBytes("RX_RAW", recvData.Replace("\n", "\\n").Replace("\r", "\\r"));
+                if (chkRaw.Checked)
+                {
+                    this.Invoke(new Action(() => Log($"[Raw] {recvData.Trim()}")));
+                }
 
                 while (true)
                 {
@@ -120,6 +137,23 @@ namespace SerialCommTest
                         this.Invoke(new Action(() =>
                         {
                             Log($"[RX] 파싱 : {msg}");
+
+                            if (isAutoRunning)
+                            {
+                                int currentRow = dgvList.CurrentCell.RowIndex;
+                                dgvList.Rows[currentRow].Cells[2].Value = msg;
+                                isResponseReceived = true;
+                            }
+
+                            // 시뮬레이터 모드
+                            if (chkDeviceMode.Checked)
+                            {
+                                string replyMsg = $"ACK:{msg}";
+                                string replyPacket = $"{STX}{replyMsg}{ETX}";
+                                serialPort1.Write(replyPacket);
+                                Log($"[Auto-Reply] {replyMsg}");
+                            }
+
                             LogManager.WriteResult(lastSentCommand, msg, "성공");
                         }));
 
@@ -142,6 +176,94 @@ namespace SerialCommTest
                     this.Invoke(new Action(() => Log($"수신 실패 : {ex.Message}")));
                 }
             }
+        }
+
+        private void btnLoad_Click(object sender, EventArgs e)
+        {
+            OpenFileDialog ofd = new OpenFileDialog();
+            ofd.Filter = "CSV 파일 (*.csv)|*.csv|모든 파일 (*.*)|*.*";
+
+            if (ofd.ShowDialog() == DialogResult.OK)
+            {
+                dgvList.Rows.Clear();
+
+                string[] lines = File.ReadAllLines(ofd.FileName, Encoding.Default);
+                for (int i = 0; i < lines.Length; i++)
+                {
+                    string[] cols = lines[i].Split(',');
+                    if (cols.Length > 0)
+                    {
+                        dgvList.Rows.Add(i + 1, cols[0], "", "대기");
+                    }
+                }
+                Log($"파일 로드 완료: {lines.Length}개 데이터");
+            }
+        }
+
+        private async void btnAutoStart_Click(object sender, EventArgs e)
+        {
+            if (!serialPort1.IsOpen) { Log("먼저 포트를 연결해주세요."); return; }
+            if (isAutoRunning) { Log("이미 실행 중입니다."); return; }
+
+            isAutoRunning = true;
+            btnAutoStart.Enabled = false;
+            btnLoad.Enabled = false;
+
+            Log("=== 자동 테스트 시작 ===");
+
+            for (int i = 0; i < dgvList.Rows.Count; i++)
+            {
+                if (dgvList.Rows[i].Cells[1].Value == null) continue;
+                string cmd = dgvList.Rows[i].Cells[1].Value.ToString();
+
+                dgvList.Rows[i].Cells[3].Value = "진행중...";
+                dgvList.Rows[i].DefaultCellStyle.BackColor = Color.Yellow;
+                dgvList.CurrentCell = dgvList.Rows[i].Cells[0];
+
+                SendCommand(cmd);
+                isResponseReceived = false;
+
+                int timeOut = 20;
+                while (timeOut > 0)
+                {
+                    if (isResponseReceived) break;
+                    await Task.Delay(100);
+                    timeOut--;
+                }
+
+                if (isResponseReceived)
+                {
+                    dgvList.Rows[i].Cells[3].Value = "성공";
+                    dgvList.Rows[i].DefaultCellStyle.BackColor = Color.LightGreen;
+                }
+                else
+                {
+                    dgvList.Rows[i].Cells[2].Value = "(응답없음)";
+                    dgvList.Rows[i].Cells[3].Value = "실패(Timeout)";
+                    dgvList.Rows[i].DefaultCellStyle.BackColor = Color.LightPink;
+                    LogManager.WriteResult(cmd, "TIMEOUT", "실패");
+                }
+
+                await Task.Delay(200);
+            }
+
+            Log("=== 자동 테스트 종료 ===");
+            isAutoRunning = false;
+            btnAutoStart.Enabled = true;
+            btnLoad.Enabled = true;
+        }
+
+        private void SendCommand(string data)
+        {
+            try
+            {
+                lastSentCommand = data;
+                string packet = $"{STX}{data}{ETX}";
+                serialPort1.Write(packet);
+                Log($"[TX] {data}");
+                LogManager.WriteBytes("TX", data);
+            }
+            catch (Exception ex) { Log($"전송 에러: {ex.Message}"); }
         }
     }
 }
